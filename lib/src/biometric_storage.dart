@@ -178,6 +178,7 @@ abstract class BiometricStorage extends PlatformInterface {
 
   Future<String> _read(
     String name,
+    String fingerprint,
     AndroidPromptInfo androidPromptInfo,
   );
 
@@ -189,6 +190,7 @@ abstract class BiometricStorage extends PlatformInterface {
   Future<void> _write(
     String name,
     String content,
+    String fingerprint,
     AndroidPromptInfo androidPromptInfo,
   );
 }
@@ -232,7 +234,7 @@ class MethodChannelBiometricStorage extends BiometricStorage {
         options: StorageFileInitOptions(authenticationRequired: false));
     _logger.finer('Checking app armor');
     try {
-      await tmpStorage.read();
+      await tmpStorage.read('appArmorCheck');
       _logger.finer('Everything okay.');
       return false;
     } on AuthException catch (e, stackTrace) {
@@ -284,10 +286,12 @@ class MethodChannelBiometricStorage extends BiometricStorage {
   @override
   Future<String> _read(
     String name,
+    String fingerprint,
     AndroidPromptInfo androidPromptInfo,
   ) =>
       _transformErrors(_channel.invokeMethod<String>('read', <String, dynamic>{
         'name': name,
+        'fingerprint': fingerprint,
         ..._androidPromptInfoOnlyOnAndroid(androidPromptInfo),
       }));
 
@@ -305,11 +309,13 @@ class MethodChannelBiometricStorage extends BiometricStorage {
   Future<void> _write(
     String name,
     String content,
+    String fingerprint,
     AndroidPromptInfo androidPromptInfo,
   ) =>
       _transformErrors(_channel.invokeMethod('write', <String, dynamic>{
         'name': name,
         'content': content,
+        'fingerprint':fingerprint,
         ..._androidPromptInfoOnlyOnAndroid(androidPromptInfo),
       }));
 
@@ -354,19 +360,20 @@ class MethodChannelBiometricStorage extends BiometricStorage {
 }
 
 class BiometricStorageFile {
-  BiometricStorageFile(this._plugin, this.name, this.androidPromptInfo);
+  BiometricStorageFile(this._plugin,this.name, this.androidPromptInfo);
 
   final BiometricStorage _plugin;
   final String name;
+
   final AndroidPromptInfo androidPromptInfo;
 
   /// read from the secure file and returns the content.
   /// Will return `null` if file does not exist.
-  Future<String> read() => _plugin._read(name, androidPromptInfo);
+  Future<String> read(String fingerprint ) => _plugin._read(name,fingerprint, androidPromptInfo);
 
   /// Write content of this file. Previous value will be overwritten.
-  Future<void> write(String content) =>
-      _plugin._write(name, content, androidPromptInfo);
+  Future<void> write(String content, String fingerprint) =>
+      _plugin._write(name, content,fingerprint, androidPromptInfo);
 
   /// Delete the content of this storage.
   Future<void> delete() => _plugin._delete(name, androidPromptInfo);

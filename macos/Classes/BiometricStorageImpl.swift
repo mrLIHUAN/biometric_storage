@@ -79,12 +79,17 @@ class BiometricStorageImpl {
       result(true)
     } else if ("read" == call.method) {
       requiredArg("name") { name in
-        read(name, result)
+        requiredArg("fingerprint") { fingerprint in
+            read(name, fingerprint ,result)
+        }
       }
     } else if ("write" == call.method) {
       requiredArg("name") { name in
         requiredArg("content") { content in
-          write(name, content, result)
+            requiredArg("fingerprint") { fingerprint in
+                 write(name, content, fingerprint, result)
+            }
+         
         }
       }
     } else if ("delete" == call.method) {
@@ -96,11 +101,11 @@ class BiometricStorageImpl {
     }
   }
   
-  private func read(_ name: String, _ result: @escaping StorageCallback) {
+    private func read(_ name: String, _ fingerprint :String, _ result: @escaping StorageCallback) {
     
     var query = baseQuery(name: name)
     query[kSecMatchLimit as String] = kSecMatchLimitOne
-    query[kSecUseOperationPrompt as String] = "Unlock to access data"
+    query[kSecUseOperationPrompt as String] = fingerprint
     query[kSecReturnAttributes as String] = true
     query[kSecReturnData as String] = true
     
@@ -137,7 +142,7 @@ class BiometricStorageImpl {
     result(true)
   }
   
-  private func write(_ name: String, _ content: String, _ result: @escaping StorageCallback) {
+    private func write(_ name: String, _ content: String, _ fingerprint:String, _ result: @escaping StorageCallback) {
     guard let initOptions = stores[name] else {
       result(storageError(code: "WriteError", message: "Storage was not initialized. \(name)", details: nil))
       return
@@ -146,16 +151,16 @@ class BiometricStorageImpl {
     var query = baseQuery(name: name)
     
     if (initOptions.authenticationRequired) {
-      let context = LAContext()
-      context.touchIDAuthenticationAllowableReuseDuration = Double(initOptions.authenticationValidityDurationSeconds)
+//      let context = LAContext()
+//      context.touchIDAuthenticationAllowableReuseDuration = Double(initOptions.authenticationValidityDurationSeconds)
       let access = SecAccessControlCreateWithFlags(nil, // Use the default allocator.
         kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly,
-        .userPresence,
+        .userPresence,                                       
         nil) // Ignore any error.
       query.merge([
-        kSecUseAuthenticationContext as String: context,
+//        kSecUseAuthenticationContext as String: context,
         kSecAttrAccessControl as String: access as Any,
-        kSecUseOperationPrompt as String: "Unlock to save data",
+        kSecUseOperationPrompt as String: fingerprint,
       ]) { (_, new) in new }
     } else {
       hpdebug("No authentication required for \(name)")

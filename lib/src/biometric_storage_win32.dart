@@ -18,10 +18,11 @@ class Win32BiometricStoragePlugin extends BiometricStorage {
   @override
   Future<BiometricStorageFile> getStorage(String name,
       {StorageFileInitOptions options,
+        String fingerprint,
       bool forceInit = false,
       AndroidPromptInfo androidPromptInfo =
           AndroidPromptInfo._defaultValues}) async {
-    return BiometricStorageFile(this, namePrefix + name, androidPromptInfo);
+    return BiometricStorageFile(this,namePrefix + name, androidPromptInfo);
   }
 
   @override
@@ -45,7 +46,7 @@ class Win32BiometricStoragePlugin extends BiometricStorage {
   }
 
   @override
-  Future<String> _read(String name, AndroidPromptInfo androidPromptInfo) async {
+  Future<String> _read(String name,String fingerprint, AndroidPromptInfo androidPromptInfo) async {
     final credPointer = allocate<Pointer<CREDENTIAL>>();
     try {
       final result = CredRead(TEXT(name), CRED_TYPE_GENERIC, 0, credPointer);
@@ -69,7 +70,7 @@ class Win32BiometricStoragePlugin extends BiometricStorage {
 
   @override
   Future<void> _write(
-      String name, String content, AndroidPromptInfo androidPromptInfo) async {
+      String name, String content,String fingerprint, AndroidPromptInfo androidPromptInfo) async {
     final examplePassword = utf8.encode(content) as Uint8List;
     final blob = examplePassword.allocatePointer();
 

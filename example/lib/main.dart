@@ -135,7 +135,7 @@ class _MyAppState extends State<MyApp> {
                   _authStorage = await BiometricStorage().getStorage(
                       '${baseName}_authenticated',
                       options: StorageFileInitOptions(
-                          authenticationValidityDurationSeconds: 30));
+                          authenticationValidityDurationSeconds: 30,authenticationRequired: true));
                 }
                 _storage = await BiometricStorage()
                     .getStorage('${baseName}_unauthenticated',
@@ -269,8 +269,23 @@ class StorageActions extends StatelessWidget {
           child: const Text('read'),
           onPressed: () async {
             _logger.fine('reading from ${storageFile.name}');
-            final result = await storageFile.read();
-            _logger.fine('read: {$result}');
+
+            try{
+              final result = await storageFile.read('请验证已有指纹');
+              _logger.fine('read: {$result}');
+            }catch(e){
+              print(e);
+            }
+
+//            storageFile.read('请验证已有指纹').then((value) {
+//              _logger.fine('read: {$value}');
+//            },onError: (dddd){
+//
+//            });
+
+
+//            final result = await storageFile.read('请验证已有指纹');
+//            _logger.fine('read: {$result}');
           },
         ),
         RaisedButton(
@@ -278,7 +293,7 @@ class StorageActions extends StatelessWidget {
           onPressed: () async {
             _logger.fine('Going to write...');
             await storageFile
-                .write(' [${DateTime.now()}] ${writeController.text}');
+                .write(' [${DateTime.now()}] ${writeController.text}','请验证已有指纹');
             _logger.info('Written content.');
           },
         ),
